@@ -35,6 +35,7 @@ This project addresses those pain points by:
 - 🧩 Clean, extensible architecture
 
 ## 🧠 How It Works
+```
 GitHub Pull Request Event
 ↓
 GitHub Webhook
@@ -46,15 +47,17 @@ Static Rule Engine
 AI Reviewer (LLM)
 ↓
 PR Comment Publisher
-
+```
 ## 🏗️ Architecture Overview
 
 The project follows a clean, modular architecture:
+```
 src/
 ├─ Api/                # Webhooks & HTTP endpoints
 ├─ Core/               # Domain models & interfaces
 ├─ Application/        # Business logic & review pipeline
 └─ Infrastructure/     # GitHub & AI provider integrations
+```
 
 This design enables:
 
@@ -120,14 +123,22 @@ This approach delivers:
 - No permanent storage of source code  
 
 ## 🧑‍💻 Example PR Comment
+
 🧠 Automated Review Summary
+
 ⚠️ Potential Issues Detected:
-• Logic in UserService.cs may cause NullReferenceException when user is not found
-• Authentication-related files modified without corresponding test updates
+
+- Logic in UserService.cs may cause NullReferenceException when user is not found
+- Authentication-related files modified without corresponding test updates
+
 📏 PR Size:
-• 12 files changed, ~480 lines — consider splitting for easier review
+
+- 12 files changed, ~480 lines — consider splitting for easier review
+
 ✅ Recommendation:
-• Add null checks and unit tests for the updated authentication logic
+
+- Add null checks and unit tests for the updated authentication logic
+
 text## 🗺️ Roadmap
 
 **MVP**  
@@ -147,6 +158,7 @@ text## 🗺️ Roadmap
 ## 🚧 Current Status
 
 🟡 **Actively in development**  
+
 Currently focused on solid GitHub integration and core review logic.
 
 ## 📄 License
