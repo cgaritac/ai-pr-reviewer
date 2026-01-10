@@ -1,8 +1,15 @@
+using System.Text.Json.Serialization;
+
 namespace AiPrReviewer.Models.GitHub;
 
 public class Repository
 {
-    public string FullName { get; set; }
+    [JsonPropertyName("full_name")]
+    public string? FullName { get; set; }
+
+    public Repository()
+    {
+    }
 
     public Repository(string fullName)
     {

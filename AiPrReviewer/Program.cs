@@ -19,6 +19,11 @@ app.MapPost("/webhooks/github", async (HttpRequest request) =>
     var body = await reader.ReadToEndAsync();
 
     Console.WriteLine($"GitHub Event: {gitHubEvent}");
+    if (body.Length > 0)
+    {
+        var preview = body.Length > 500 ? body.Substring(0, 500) + "..." : body;
+        Console.WriteLine($"Payload preview: {preview}");
+    }
 
     if (gitHubEvent == "pull_request")
     {
@@ -31,6 +36,18 @@ app.MapPost("/webhooks/github", async (HttpRequest request) =>
         {
             Console.WriteLine("Invalid payload");
             return Results.BadRequest("Invalid payload");
+        }
+
+        if (payload.PullRequest == null)
+        {
+            Console.WriteLine("PullRequest is null in payload");
+            return Results.BadRequest("PullRequest is missing in payload");
+        }
+
+        if (payload.Repository == null)
+        {
+            Console.WriteLine("Repository is null in payload");
+            return Results.BadRequest("Repository is missing in payload");
         }
 
         Console.WriteLine($"Pull action: {payload.Action}");
