@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AiPrReviewer.Models.GitHub;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,9 +21,26 @@ app.MapPost("/webhooks/github", async (HttpRequest request) =>
     Console.WriteLine($"GitHub Event: {gitHubEvent}");
 
     if (gitHubEvent == "pull_request")
-    {        
-        Console.WriteLine("Webhook received: from GitHub");
-        Console.WriteLine(body);
+    {
+        var payload = JsonSerializer.Deserialize<PRPayload>(
+            body,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+        );
+
+        if (payload == null)
+        {
+            Console.WriteLine("Invalid payload");
+            return Results.BadRequest("Invalid payload");
+        }
+
+        Console.WriteLine($"Pull action: {payload.Action}");
+        Console.WriteLine($"Pull request: {payload.PullRequest.Title}");
+        Console.WriteLine($"Repository: {payload.Repository.FullName}");
+
+        if (payload.PullRequest.Merged)
+        {
+            Console.WriteLine($"Pull request {payload.PullRequest.Id} was merged");
+        }
     }
 
     return Results.Ok();
