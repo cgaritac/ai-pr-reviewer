@@ -139,22 +139,6 @@ This approach delivers:
 
 - Add null checks and unit tests for the updated authentication logic
 
-text## 🗺️ Roadmap
-
-**MVP**  
-- GitHub webhook integration  
-- PR comment publishing  
-- Diff parser  
-- Static rule engine  
-- AI reviewer integration  
-
-**Future / Next steps**  
-- File-level comments  
-- Azure DevOps support  
-- Language-specific rules  
-- Configurable review policies  
-- Local LLM support (Ollama, etc.)  
-
 ## 🚧 Current Status
 
 🟡 **Actively in development**  
