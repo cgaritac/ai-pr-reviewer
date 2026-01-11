@@ -1,15 +1,67 @@
 using System.Text.Json;
 using AiPrReviewer.Models.GitHub;
+using AiPrReviewer.Services.Github;
+using DotNetEnv;
+
+// .env file loading and validation
+var projectDir = Directory.GetCurrentDirectory();
+var envPath = Path.Combine(projectDir, ".env");
+
+if (!File.Exists(envPath))
+{
+    var parentDir = Directory.GetParent(projectDir)?.FullName;
+    if (parentDir != null)
+    {
+        envPath = Path.Combine(parentDir, ".env");
+    }
+}
+
+if (File.Exists(envPath))
+{
+    try
+    {
+        Env.Load(envPath);
+    }
+    catch
+    {
+        var lines = File.ReadAllLines(envPath);
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#"))
+                continue;
+            
+            var equalIndex = line.IndexOf('=');
+            if (equalIndex <= 0) continue;
+            
+            var key = line.Substring(0, equalIndex).Trim();
+            var value = line.Substring(equalIndex + 1).Trim();
+            
+            Environment.SetEnvironmentVariable(key, value);
+        }
+    }
+}
+else
+{
+    Env.Load();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<JwtService>();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.MapGet("/debug/jwt", (JwtService jwtService) =>
+{
+    var jwt = jwtService.GenerateJwtToken();
+    return Results.Ok(jwt);
+}).WithName("DebugJwt");
 
 app.MapPost("/webhooks/github", async (HttpRequest request) =>
 {
