@@ -1,0 +1,25 @@
+using System.Text.Json.Serialization;
+
+namespace AiPrReviewer.Models.GitHub;
+
+public class PRWebhookPayload
+{
+    [JsonPropertyName("installation")]
+    public Installation? Installation { get; set; }
+    
+    [JsonPropertyName("pull_request")]
+    public PullRequest? PullRequest { get; set; }
+    
+    public Repository? Repository { get; set; }
+
+    public PRWebhookPayload()
+    {
+    }
+
+    public PRWebhookPayload(Installation installation, PullRequest pullRequest, Repository repository)
+    {
+        Installation = installation;
+        PullRequest = pullRequest;
+        Repository = repository;
+    }
+}
