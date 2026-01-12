@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,10 +21,21 @@ public class JwtService : IDisposable
         
         var privateKey = privateKeyRaw.Replace("\\n", "\n");
         
-        // Crear el RSA y mantenerlo vivo mientras el servicio exista
-        _rsa = RSA.Create();
-        _rsa.ImportFromPem(privateKey.ToCharArray());
-        _rsaSecurityKey = new RsaSecurityKey(_rsa);
+        if (!privateKey.Contains("BEGIN"))
+        {
+            privateKey = $"-----BEGIN RSA PRIVATE KEY-----\n{privateKey}\n-----END RSA PRIVATE KEY-----";
+        }
+        
+        try
+        {
+            _rsa = RSA.Create();
+            _rsa.ImportFromPem(privateKey.ToCharArray());
+            _rsaSecurityKey = new RsaSecurityKey(_rsa);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error processing private key. Verify that PRIVATE_KEY is in PEM format. Error: {ex.Message}", ex);
+        }
     }
     
     public void Dispose()
@@ -40,9 +52,19 @@ public class JwtService : IDisposable
                 SecurityAlgorithms.RsaSha256
             );
 
+            var now = DateTime.UtcNow;
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Iss, _appId),
+                new Claim(JwtRegisteredClaimNames.Iat, 
+                    new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), 
+                    ClaimValueTypes.Integer64)
+            };
+
             var token = new JwtSecurityToken(
-                issuer: _appId,
-                expires: DateTime.UtcNow.AddMinutes(10).AddSeconds(-30),
+                claims: claims,
+                notBefore: now,
+                expires: now.AddMinutes(10).AddSeconds(-30),
                 signingCredentials: credentials
             );
 

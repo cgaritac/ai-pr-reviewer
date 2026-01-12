@@ -50,6 +50,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<JwtService>();
+builder.Services.AddSingleton<InstallationService>();
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
@@ -63,7 +64,37 @@ app.MapGet("/debug/jwt", (JwtService jwtService) =>
     return Results.Ok(jwt);
 }).WithName("DebugJwt");
 
-app.MapPost("/webhooks/github", async (HttpRequest request) =>
+app.MapGet("/debug/installation-token/{id:long}",
+    async (long id, InstallationService service) =>
+{
+    try
+    {
+        var token = await service.GetInstallationToken(id);
+        return Results.Ok(new { token });
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem(
+            detail: ex.Message,
+            statusCode: 500,
+            title: "Error getting installation token"
+        );
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            detail: $"Unexpected error: {ex.Message}\nStack trace: {ex.StackTrace}",
+            statusCode: 500,
+            title: "Unexpected error"
+        );
+    }
+}).WithName("DebugInstallationToken");
+
+app.MapPost("/webhooks/github", async (
+    HttpRequest request,
+    JwtService jwtService,
+    IHttpClientFactory httpClientFactory
+) =>
 {
     var gitHubEvent = request.Headers["X-GitHub-Event"].ToString();
 
@@ -79,7 +110,7 @@ app.MapPost("/webhooks/github", async (HttpRequest request) =>
 
     if (gitHubEvent == "pull_request")
     {
-        var payload = JsonSerializer.Deserialize<PRPayload>(
+        var payload = JsonSerializer.Deserialize<PRWebhookPayload>(
             body,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
         );
@@ -88,6 +119,12 @@ app.MapPost("/webhooks/github", async (HttpRequest request) =>
         {
             Console.WriteLine("Invalid payload");
             return Results.BadRequest("Invalid payload");
+        }
+
+        if (payload?.Installation == null)
+        {
+            Console.WriteLine("Installation is null in payload");
+            return Results.BadRequest("Installation is missing in payload");
         }
 
         if (payload.PullRequest == null)
@@ -102,9 +139,10 @@ app.MapPost("/webhooks/github", async (HttpRequest request) =>
             return Results.BadRequest("Repository is missing in payload");
         }
 
-        Console.WriteLine($"Pull action: {payload.Action}");
+        //Console.WriteLine($"Pull action: {payload.Action}");
         Console.WriteLine($"Pull request: {payload.PullRequest.Title}");
         Console.WriteLine($"Repository: {payload.Repository.FullName}");
+        Console.WriteLine($"Installation: {payload.Installation.Id}");
 
         if (payload.PullRequest.Merged)
         {
