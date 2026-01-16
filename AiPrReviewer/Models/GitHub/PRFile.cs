@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+namespace AiPrReviewer.Models.GitHub;
+
 public class PRFile
 {
     [JsonPropertyName("filename")]

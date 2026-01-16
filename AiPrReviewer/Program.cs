@@ -51,6 +51,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<InstallationService>();
+builder.Services.AddSingleton<PRService>();
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
