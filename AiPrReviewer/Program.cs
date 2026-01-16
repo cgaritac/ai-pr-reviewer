@@ -93,8 +93,8 @@ app.MapGet("/debug/installation-token/{id:long}",
 
 app.MapPost("/webhooks/github", async (
     HttpRequest request,
-    JwtService jwtService,
-    IHttpClientFactory httpClientFactory
+    PRService prService,
+    InstallationService installationService
 ) =>
 {
     var gitHubEvent = request.Headers["X-GitHub-Event"].ToString();
@@ -102,7 +102,6 @@ app.MapPost("/webhooks/github", async (
     using var reader = new StreamReader(request.Body);
     var body = await reader.ReadToEndAsync();
 
-    Console.WriteLine($"GitHub Event: {gitHubEvent}");
     if (body.Length > 0)
     {
         var preview = body.Length > 500 ? body.Substring(0, 500) + "..." : body;
@@ -122,13 +121,13 @@ app.MapPost("/webhooks/github", async (
             return Results.BadRequest("Invalid payload");
         }
 
-        if (payload?.Installation == null)
+        if (payload.Installation == null)
         {
             Console.WriteLine("Installation is null in payload");
             return Results.BadRequest("Installation is missing in payload");
         }
 
-        if (payload.PullRequest == null)
+        if (payload?.PullRequest == null)
         {
             Console.WriteLine("PullRequest is null in payload");
             return Results.BadRequest("PullRequest is missing in payload");
@@ -140,14 +139,59 @@ app.MapPost("/webhooks/github", async (
             return Results.BadRequest("Repository is missing in payload");
         }
 
-        //Console.WriteLine($"Pull action: {payload.Action}");
-        Console.WriteLine($"Pull request: {payload.PullRequest.Title}");
-        Console.WriteLine($"Repository: {payload.Repository.FullName}");
-        Console.WriteLine($"Installation: {payload.Installation.Id}");
-
-        if (payload.PullRequest.Merged)
+        if (string.IsNullOrEmpty(payload.Repository.FullName))
         {
-            Console.WriteLine($"Pull request {payload.PullRequest.Id} was merged");
+            Console.WriteLine("Repository.FullName is null or empty in payload");
+            return Results.BadRequest("Repository.FullName is missing in payload");
+        }
+
+        Console.WriteLine($"Pull request: {payload.PullRequest.Title}");
+        Console.WriteLine($"Installation: {payload.Installation.Id}");
+        Console.WriteLine($"Action: {payload.Action}");
+
+        // Solo procesar PRs cuando se abren, no cuando se cierran
+        if (payload.Action != "opened")
+        {
+            Console.WriteLine($"Pull request action '{payload.Action}' not 'opened', skipping review");
+            return Results.Ok($"PR action '{payload.Action}' not 'opened', skipping review");
+        }
+
+        try
+        {
+            var token = await installationService.GetInstallationToken(payload.Installation.Id);
+            var files = await prService.GetPRFilesAsync(
+                payload.PullRequest.Number,
+                token,
+                payload.Repository.FullName
+            );
+
+            Console.WriteLine($"Files in PR #{payload.PullRequest.Number}");
+
+            foreach (var file in files)
+            {
+                Console.WriteLine($"- {file.Filename} ({file.Status})");
+            }
+
+            // Add AI review logic here
+            Console.WriteLine("Review completed successfully");
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error accessing GitHub API: {ex.Message}");
+            return Results.Problem(
+                detail: $"Error accessing GitHub API: {ex.Message}",
+                statusCode: 502,
+                title: "GitHub API Error"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected error during PR review: {ex.Message}");
+            return Results.Problem(
+                detail: $"Unexpected error: {ex.Message}",
+                statusCode: 500,
+                title: "Internal Server Error"
+            );
         }
     }
 
