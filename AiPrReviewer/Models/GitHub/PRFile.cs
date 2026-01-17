@@ -10,7 +10,7 @@ public class PRFile
     [JsonPropertyName("status")]
     public string? Status { get; set; }
 
-    [JsonPropertyName("path")]
+    [JsonPropertyName("patch")]
     public string? Patch { get; set; }
 
     public PRFile() { }

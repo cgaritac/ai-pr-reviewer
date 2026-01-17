@@ -107,7 +107,8 @@ app.MapPost("/webhooks/github", async (
     HttpRequest request,
     PRService prService,
     InstallationService installationService,
-    AiPromptBuilder promptBuilder
+    AiPromptBuilder promptBuilder,
+    OpenAiReviewService openAiReviewService
 ) =>
 {
     var gitHubEvent = request.Headers["X-GitHub-Event"].ToString();
@@ -191,8 +192,10 @@ app.MapPost("/webhooks/github", async (
                 files
             );
 
-            Console.WriteLine("🧠 PROMPT SENT TO AI:");
-            Console.WriteLine(prompt);
+            var aiFeedback = await openAiReviewService.ReviewPRAsync(prompt);
+
+            Console.WriteLine("🧠 AI Review:");
+            Console.WriteLine(aiFeedback);
 
             // Add AI review logic here
             Console.WriteLine("Review completed successfully");
