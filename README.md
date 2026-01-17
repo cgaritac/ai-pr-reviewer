@@ -1,4 +1,4 @@
-## 🤖 AI-Powered Pull Request Reviewer
+# 🤖 AI-Powered Pull Request Reviewer
 
 An automated AI-assisted Pull Request reviewer for GitHub that helps teams detect code quality issues, potential bugs, and architectural risks directly from PR diffs — combining deterministic static rules with thoughtful LLM reasoning.
 
