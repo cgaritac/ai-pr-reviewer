@@ -11,14 +11,14 @@ public class PRFile
     public string? Status { get; set; }
 
     [JsonPropertyName("path")]
-    public string? Path { get; set; }
+    public string? Patch { get; set; }
 
     public PRFile() { }
 
-    public PRFile(string filename, string status, string path)
+    public PRFile(string filename, string status, string patch)
     {
         Filename = filename;
         Status = status;
-        Path = path;
+        Patch = patch;
     }
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AiPrReviewer.Models.GitHub;
+using AiPrReviewer.Services.AI;
 using AiPrReviewer.Services.Github;
 using DotNetEnv;
 
@@ -52,7 +53,17 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<InstallationService>();
 builder.Services.AddSingleton<PRService>();
-builder.Services.AddHttpClient();
+builder.Services.AddSingleton<AiPromptBuilder>();
+builder.Services.AddHttpClient("github")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        MaxConnectionsPerServer = 10
+    })
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .ConfigureHttpClient(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(60);
+    });
 
 var app = builder.Build();
 
@@ -94,7 +105,8 @@ app.MapGet("/debug/installation-token/{id:long}",
 app.MapPost("/webhooks/github", async (
     HttpRequest request,
     PRService prService,
-    InstallationService installationService
+    InstallationService installationService,
+    AiPromptBuilder promptBuilder
 ) =>
 {
     var gitHubEvent = request.Headers["X-GitHub-Event"].ToString();
@@ -171,6 +183,15 @@ app.MapPost("/webhooks/github", async (
             {
                 Console.WriteLine($"- {file.Filename} ({file.Status})");
             }
+
+            var prompt = promptBuilder.BuildPrPrompt(
+                payload.Repository.FullName,
+                payload.PullRequest.Number,
+                files
+            );
+
+            Console.WriteLine("🧠 PROMPT SENT TO AI:");
+            Console.WriteLine(prompt);
 
             // Add AI review logic here
             Console.WriteLine("Review completed successfully");
