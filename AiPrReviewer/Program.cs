@@ -54,6 +54,7 @@ builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<InstallationService>();
 builder.Services.AddSingleton<PRService>();
 builder.Services.AddSingleton<AiPromptBuilder>();
+builder.Services.AddSingleton<OpenAiReviewService>();
 builder.Services.AddHttpClient("github")
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
