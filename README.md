@@ -1,156 +1,177 @@
-# 🤖 AI-Powered Pull Request Reviewer
+# 🤖 AI PR Reviewer
 
-An automated AI-assisted Pull Request reviewer for GitHub that helps teams detect code quality issues, potential bugs, and architectural risks directly from PR diffs — combining deterministic static rules with thoughtful LLM reasoning.
+Automated Pull Request Code Reviews powered by AI and GitHub Apps
 
-⚠️ **Important**: This tool is **not** meant to replace human reviewers.  
-✅ It is designed to **augment** code reviews, reduce noise, and surface risks early.
+AI PR Reviewer is a GitHub App that automatically analyzes Pull Requests using AI and posts concise, actionable code review feedback directly on GitHub.
 
-## 🚀 Why This Project Exists
+Designed to demonstrate real-world integrations, secure GitHub App authentication, and practical AI usage in a production-like backend architecture.
 
-Code reviewers are essential, but:
+## 🚀 Key Features
 
-- Large PRs are hard to review thoroughly
-- Reviewers miss subtle risks under time pressure
-- Static linters lack context and real reasoning
+- 🔐 GitHub App authentication (JWT + Installation Tokens)
+- 🪝 GitHub Webhooks for Pull Request events
+- 📂 Automatic PR file & diff analysis
+- 🧠 AI-powered code reviews using OpenAI
+- 💬 Automated PR comments with actionable feedback
+- ⚙️ Minimal API with clean, modular architecture
 
-This project addresses those pain points by:
+## 🧩 How It Works
 
-- Analyzing **only changed code** (diff-based analysis)  
-- Applying deterministic rules first  
-- Using AI **only** where human-like reasoning adds real value
+1. A Pull Request is opened in a repository
+2. GitHub sends a webhook event to the API
+3. The app authenticates as a GitHub App
+4. PR files and diffs are fetched from GitHub
+5. Relevant changes are converted into an AI-friendly prompt
+6. OpenAI analyzes the code changes
+7. A formatted review comment is posted back to the Pull Request
 
-## ✨ Key Features
-
-- 🔍 Diff-based analysis (no full repo scanning)  
-- 📏 Pre-AI static rules  
-  - PR size warnings  
-  - Too many files changed  
-  - Sensitive folders detection  
-- 🧠 AI-powered reasoning  
-  - Potential bugs  
-  - Risky patterns  
-  - Code consistency issues  
-- 💬 Automated PR comments  
-- 🔐 Secure GitHub App integration  
-- 🧩 Clean, extensible architecture
-
-## 🧠 How It Works
-```
-GitHub Pull Request Event
-↓
-GitHub Webhook
-↓
-PR Diff Fetcher
-↓
-Static Rule Engine
-↓
-AI Reviewer (LLM)
-↓
-PR Comment Publisher
-```
 ## 🏗️ Architecture Overview
 
-The project follows a clean, modular architecture:
 ```
-src/
-├─ Api/                # Webhooks & HTTP endpoints
-├─ Core/               # Domain models & interfaces
-├─ Application/        # Business logic & review pipeline
-└─ Infrastructure/     # GitHub & AI provider integrations
+GitHub PR Opened
+      ↓
+GitHub Webhook
+      ↓
+.NET Minimal API
+      ↓
+GitHub App Authentication (JWT)
+      ↓
+PR Files & Diffs
+      ↓
+Prompt Builder
+      ↓
+OpenAI Review
+      ↓
+GitHub PR Comment
 ```
-
-This design enables:
-
-- Future extension to Azure DevOps  
-- Easy swapping of AI providers (OpenAI → Azure OpenAI → Local LLMs)  
-- Clear separation of concerns  
-
-## 🧪 What the AI Reviews (and What It Doesn't)
-
-**The AI DOES:**
-
-- Analyze only modified code  
-- Identify potential bugs and risks  
-- Detect inconsistencies and bad practices  
-- Flag unclear or confusing logic  
-
-**The AI DOES NOT:**
-
-- Rewrite or refactor large portions of code  
-- Replace human approval  
-- Execute builds or tests  
-- Analyze dependencies or external libraries  
-
-## 🤖 AI Strategy (Important Design Choice)
-
-This project **does not** blindly send code to an LLM. Instead it:
-
-1. Uses static rules to filter and reduce noise first  
-2. Keeps context tightly controlled and minimal  
-3. Forces structured, constrained LLM output (JSON schema)  
-
-This approach delivers:
-
-- Much lower token usage  
-- More consistent feedback  
-- Significantly better signal-to-noise ratio  
 
 ## 🛠️ Tech Stack
 
-**Backend**  
-- .NET 8  
-- ASP.NET Core (Minimal APIs)
+### Backend
+- .NET 8
+- Minimal APIs
+- System.IdentityModel.Tokens.Jwt
 
-**AI**  
-- OpenAI API  
-- Designed for easy migration to Azure OpenAI  
-- Structured responses using JSON schema
+### GitHub Integration
+- GitHub Apps
+- Webhooks
+- REST API (Installation Tokens)
 
-**GitHub Integration**  
-- GitHub App (secure — no personal tokens)  
-- Webhooks  
-- Pull Request Comments API
+### AI
+- OpenAI API
+- GPT-4o-mini / GPT-4.1-mini
+- Prompt engineering for code reviews
 
-**Tooling**  
-- ngrok / smee.io (for local webhook testing)  
-- Docker (optional)
+### Dev & Tooling
+- ngrok (local webhook exposure)
+- Environment-based configuration
+- Dependency Injection
 
-## 🔐 Security Considerations
+## 📁 Project Structure
 
-- GitHub webhook signature verification  
-- Least-privilege GitHub App permissions  
-- Secrets managed via environment variables  
-- No permanent storage of source code  
+```
+AiPrReviewer
+│
+├── Models
+│   └── GitHub
+│       ├── PRWebhookPayload.cs
+│       ├── PRFile.cs
+│       ├── PR.cs
+│       ├── Installation.cs
+│       ├── Repository.cs
+│       └── PRPayload.cs
+│
+├── Services
+│   ├── Github
+│   │   ├── JwtService.cs
+│   │   ├── InstallationService.cs
+│   │   ├── PRService.cs
+│   │   └── CommentService.cs
+│   │
+│   └── AI
+│       ├── AiPromptBuilder.cs
+│       ├── OpenAiReviewService.cs
+│       └── AiCommentFormatter.cs
+│
+└── Program.cs
+```
 
-## 🧑‍💻 Example PR Comment
+## 🔐 Environment Variables
 
-🧠 Automated Review Summary
+```bash
+# GitHub App
+APP_ID=123456
+PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----
+...
 
-⚠️ Potential Issues Detected:
+# OpenAI
+OPENAI_API_KEY=sk-xxxxxxxx
+OPENAI_MODEL=gpt-4o-mini
+```
 
-- Logic in UserService.cs may cause NullReferenceException when user is not found
-- Authentication-related files modified without corresponding test updates
+⚠️ **Never commit secrets. Use environment variables or secret managers.**
 
-📏 PR Size:
+## 🧪 Local Development
 
-- 12 files changed, ~480 lines — consider splitting for easier review
+```bash
+dotnet restore
+dotnet run
+```
 
-✅ Recommendation:
+Expose the API using ngrok:
 
-- Add null checks and unit tests for the updated authentication logic
+```bash
+ngrok http 5288
+```
 
-## 🚧 Current Status
+Configure the ngrok URL as the webhook endpoint in your GitHub App.
 
-🟡 **Actively in development**  
+## 🧠 Design Decisions
 
-Currently focused on solid GitHub integration and core review logic.
+- **Minimal API** for simplicity and clarity
+- **GitHub App auth** instead of personal tokens (enterprise-ready)
+- **Diff-based prompts** to reduce token usage and noise
+- **Separated services** for GitHub, AI, and formatting
+- **AI as an assistant**, not a replacement for developers
 
-## 📄 License
+## 🧩 Example PR Comment
 
-MIT License
+```
+🤖 AI Code Review
 
-## 📬 Feedback & Contributions
+- Consider validating null inputs in UserService.cs
+- Potential performance issue inside the authentication loop
+- Naming could be improved for better readability
 
-Ideas, feedback, bug reports, and pull requests are very welcome!  
+---
+_This review was automatically generated._
+```
 
-Thanks for checking it out! 🚀
+## 🚧 Possible Improvements
+
+- Avoid duplicate comments on the same PR
+- Inline comments per file / line
+- Repository-level configuration (.ai-pr-reviewer.yml)
+- Azure OpenAI support
+- Azure DevOps Pipelines integration
+- Metrics dashboard (number of PRs reviewed, issues detected)
+
+## 📌 Why This Project?
+
+This project was built to demonstrate:
+
+- Real-world GitHub App integrations
+- Secure authentication flows
+- Practical AI usage in software engineering
+- Clean backend architecture
+- Automation that solves a real developer pain point
+
+## 👤 Author
+
+**Carlos Garita**  
+Full Stack Developer  
+Passionate about scalable systems, cloud architectures, and AI-assisted development.
+
+---
+
+> ⚠️ **Note**: I'm currently working on improving the system architecture. The project is under active development and may experience significant changes.
