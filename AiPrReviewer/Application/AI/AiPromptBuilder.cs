@@ -1,5 +1,5 @@
 using System.Text;
-using AiPrReviewer.Models.GitHub;
+using AiPrReviewer.Core.Models;
 
 namespace AiPrReviewer.Services.AI;
 

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using AiPrReviewer.Models.GitHub;
+using AiPrReviewer.Core.Models;
 using AiPrReviewer.Services.AI;
 using AiPrReviewer.Services.Github;
 using DotNetEnv;
@@ -55,6 +55,8 @@ builder.Services.AddSingleton<InstallationService>();
 builder.Services.AddSingleton<PRService>();
 builder.Services.AddSingleton<AiPromptBuilder>();
 builder.Services.AddSingleton<OpenAiReviewService>();
+builder.Services.AddSingleton<CommentService>();
+builder.Services.AddSingleton<AiCommentFormatter>();
 builder.Services.AddHttpClient("github")
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
@@ -108,7 +110,9 @@ app.MapPost("/webhooks/github", async (
     PRService prService,
     InstallationService installationService,
     AiPromptBuilder promptBuilder,
-    OpenAiReviewService openAiReviewService
+    AiCommentFormatter aiCommentFormatter,
+    OpenAiReviewService openAiReviewService,
+    CommentService commentService
 ) =>
 {
     var gitHubEvent = request.Headers["X-GitHub-Event"].ToString();
@@ -163,7 +167,6 @@ app.MapPost("/webhooks/github", async (
         Console.WriteLine($"Installation: {payload.Installation.Id}");
         Console.WriteLine($"Action: {payload.Action}");
 
-        // Solo procesar PRs cuando se abren, no cuando se cierran
         if (payload.Action != "opened")
         {
             Console.WriteLine($"Pull request action '{payload.Action}' not 'opened', skipping review");
@@ -193,12 +196,17 @@ app.MapPost("/webhooks/github", async (
             );
 
             var aiFeedback = await openAiReviewService.ReviewPRAsync(prompt);
+            var formattedComment = aiCommentFormatter.FormatComment(aiFeedback);
 
             Console.WriteLine("🧠 AI Review:");
-            Console.WriteLine(aiFeedback);
+            Console.WriteLine(formattedComment);
 
-            // Add AI review logic here
-            Console.WriteLine("Review completed successfully");
+            await commentService.PostCommentAsync(
+                payload.Repository.FullName,
+                payload.PullRequest.Number,
+                formattedComment,
+                token
+            );
         }
         catch (HttpRequestException ex)
         {

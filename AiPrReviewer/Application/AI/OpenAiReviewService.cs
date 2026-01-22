@@ -1,4 +1,3 @@
-using OpenAI;
 using OpenAI.Chat;
 
 namespace AiPrReviewer.Services.AI;

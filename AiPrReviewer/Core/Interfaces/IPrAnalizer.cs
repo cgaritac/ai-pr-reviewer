@@ -1,0 +1,1 @@
+namespace AiPrReviewer.Core.Interfaces;
