@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AiPrReviewer.Models.GitHub;
+namespace AiPrReviewer.Core.Models.GitHub;
 
 public class PRFile
 {

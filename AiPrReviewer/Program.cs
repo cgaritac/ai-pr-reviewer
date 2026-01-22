@@ -1,5 +1,5 @@
 using System.Text.Json;
-using AiPrReviewer.Models.GitHub;
+using AiPrReviewer.Core.Models.GitHub;
 using AiPrReviewer.Services.AI;
 using AiPrReviewer.Services.Github;
 using DotNetEnv;
