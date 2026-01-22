@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
 
-namespace AiPrReviewer.Services.Github;
+namespace AiPrReviewer.Infrastructure.Github;
 
 public class JwtService : IDisposable
 {

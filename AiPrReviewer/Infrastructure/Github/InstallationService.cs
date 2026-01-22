@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace AiPrReviewer.Services.Github;
+namespace AiPrReviewer.Infrastructure.Github;
 
 public class InstallationService(JwtService jwtService, IHttpClientFactory httpClientFactory)
 {

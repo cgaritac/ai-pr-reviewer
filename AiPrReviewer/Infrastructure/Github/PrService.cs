@@ -2,9 +2,9 @@ using AiPrReviewer.Core.Models;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace AiPrReviewer.Services.Github;
+namespace AiPrReviewer.Infrastructure.Github;
 
-public class PRService(IHttpClientFactory httpClientFactory)
+public class PrService(IHttpClientFactory httpClientFactory)
 {
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 

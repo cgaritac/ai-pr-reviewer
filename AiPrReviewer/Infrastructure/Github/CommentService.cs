@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace AiPrReviewer.Services.Github;
+namespace AiPrReviewer.Infrastructure.Github;
 
 public class CommentService(IHttpClientFactory httpClientFactory)
 {

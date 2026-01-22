@@ -1,7 +1,7 @@
 using System.Text.Json;
 using AiPrReviewer.Core.Models;
 using AiPrReviewer.Application.AI;
-using AiPrReviewer.Services.Github;
+using AiPrReviewer.Infrastructure.Github;
 using DotNetEnv;
 
 // .env file loading and validation
@@ -52,7 +52,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<InstallationService>();
-builder.Services.AddSingleton<PRService>();
+builder.Services.AddSingleton<PrService>();
 builder.Services.AddSingleton<AiPromptBuilder>();
 builder.Services.AddSingleton<OpenAiReviewService>();
 builder.Services.AddSingleton<CommentService>();
@@ -107,7 +107,7 @@ app.MapGet("/debug/installation-token/{id:long}",
 
 app.MapPost("/webhooks/github", async (
     HttpRequest request,
-    PRService prService,
+    PrService prService,
     InstallationService installationService,
     AiPromptBuilder promptBuilder,
     AiCommentFormatter aiCommentFormatter,
