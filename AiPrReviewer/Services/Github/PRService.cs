@@ -1,4 +1,4 @@
-using AiPrReviewer.Models.GitHub;
+using AiPrReviewer.Core.Models;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
