@@ -1,6 +1,6 @@
 using OpenAI.Chat;
 
-namespace AiPrReviewer.Services.AI;
+namespace AiPrReviewer.Application.AI;
 
 public class OpenAiReviewService
 {

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using AiPrReviewer.Core.Models;
-using AiPrReviewer.Services.AI;
+using AiPrReviewer.Application.AI;
 using AiPrReviewer.Services.Github;
 using DotNetEnv;
 
