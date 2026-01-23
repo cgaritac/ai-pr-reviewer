@@ -1,10 +1,11 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using AiPrReviewer.Core.Interfaces;
 
 namespace AiPrReviewer.Infrastructure.Github;
 
-public class CommentService(IHttpClientFactory httpClientFactory)
+public class CommentService(IHttpClientFactory httpClientFactory) : ICommentService
 {
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
@@ -17,10 +18,7 @@ public class CommentService(IHttpClientFactory httpClientFactory)
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.UserAgent.ParseAdd("AiPrReviewer/1.0");
 
-        var payload = new
-        {
-            body = comment
-        };
+        var payload = new { body = comment };
 
         var content = new StringContent(
             JsonSerializer.Serialize(payload),
@@ -29,7 +27,7 @@ public class CommentService(IHttpClientFactory httpClientFactory)
         );
 
         var response = await client.PostAsync(
-            $"https://api.github.com/repos/{repoFullName}/issues/{prNumber}/comments",
+            $"repos/{repoFullName}/issues/{prNumber}/comments",
             content
         );
 

@@ -1,6 +1,8 @@
 using System.Text.Json;
 using AiPrReviewer.Core.Models;
+using AiPrReviewer.Core.Interfaces;
 using AiPrReviewer.Application.AI;
+using AiPrReviewer.Infrastructure.OpeAI;
 using AiPrReviewer.Infrastructure.Github;
 using DotNetEnv;
 
@@ -54,10 +56,13 @@ builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<InstallationService>();
 builder.Services.AddSingleton<PrService>();
 builder.Services.AddSingleton<AiPromptBuilder>();
-builder.Services.AddSingleton<OpenAiReviewService>();
-builder.Services.AddSingleton<CommentService>();
+builder.Services.AddScoped<IAiReviewer, OpenAiReviewService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddSingleton<AiCommentFormatter>();
-builder.Services.AddHttpClient("github")
+builder.Services.AddHttpClient("github", client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+})
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
         MaxConnectionsPerServer = 10
