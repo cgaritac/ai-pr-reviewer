@@ -1,11 +1,11 @@
-using System.Text.Json;
-using AiPrReviewer.Core.Models;
 using AiPrReviewer.Core.Interfaces;
 using AiPrReviewer.Application.AI;
 using AiPrReviewer.Infrastructure.OpeAI;
 using AiPrReviewer.Infrastructure.Github;
 using AiPrReviewer.Application.Review;
+using AiPrReviewer.Api.Webhooks;
 using DotNetEnv;
+using Microsoft.AspNetCore.Mvc;
 
 // .env file loading and validation
 var projectDir = Directory.GetCurrentDirectory();
@@ -53,19 +53,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<WebhookHandler>();
 builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IInstallationService, InstallationService>();
 builder.Services.AddScoped<IPrService, PrService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+
 builder.Services.AddScoped<AiPromptBuilder>();
 builder.Services.AddScoped<IAiReviewer, OpenAiReviewService>();
-builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<AiCommentFormatter>();
+
 builder.Services.AddScoped<IReviewPipeline, ReviewPipeline>();
+
 builder.Services.AddHttpClient("github", client =>
 {
     client.BaseAddress = new Uri("https://api.github.com/");
-})
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
         MaxConnectionsPerServer = 10
     })
@@ -80,14 +84,14 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapGet("/debug/jwt", (JwtService jwtService) =>
+app.MapGet("/debug/jwt", ([FromServices] IJwtService jwtService) =>
 {
     var jwt = jwtService.GenerateJwtToken();
     return Results.Ok(jwt);
 }).WithName("DebugJwt");
 
 app.MapGet("/debug/installation-token/{id:long}",
-    async (long id, InstallationService service) =>
+    async (long id, [FromServices] IInstallationService service) =>
 {
     try
     {
@@ -114,128 +118,10 @@ app.MapGet("/debug/installation-token/{id:long}",
 
 app.MapPost("/webhooks/github", async (
     HttpRequest request,
-    PrService prService,
-    InstallationService installationService,
-    AiPromptBuilder promptBuilder,
-    AiCommentFormatter aiCommentFormatter,
-    OpenAiReviewService openAiReviewService,
-    CommentService commentService
-) =>
+    WebhookHandler handler) =>
 {
-    var gitHubEvent = request.Headers["X-GitHub-Event"].ToString();
-
-    using var reader = new StreamReader(request.Body);
-    var body = await reader.ReadToEndAsync();
-
-    if (body.Length > 0)
-    {
-        var preview = body.Length > 500 ? body.Substring(0, 500) + "..." : body;
-        Console.WriteLine($"Payload preview: {preview}");
-    }
-
-    if (gitHubEvent == "pull_request")
-    {
-        var payload = JsonSerializer.Deserialize<PRWebhookPayload>(
-            body,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-        );
-
-        if (payload == null)
-        {
-            Console.WriteLine("Invalid payload");
-            return Results.BadRequest("Invalid payload");
-        }
-
-        if (payload.Installation == null)
-        {
-            Console.WriteLine("Installation is null in payload");
-            return Results.BadRequest("Installation is missing in payload");
-        }
-
-        if (payload?.PullRequest == null)
-        {
-            Console.WriteLine("PullRequest is null in payload");
-            return Results.BadRequest("PullRequest is missing in payload");
-        }
-
-        if (payload.Repository == null)
-        {
-            Console.WriteLine("Repository is null in payload");
-            return Results.BadRequest("Repository is missing in payload");
-        }
-
-        if (string.IsNullOrEmpty(payload.Repository.FullName))
-        {
-            Console.WriteLine("Repository.FullName is null or empty in payload");
-            return Results.BadRequest("Repository.FullName is missing in payload");
-        }
-
-        Console.WriteLine($"Pull request: {payload.PullRequest.Title}");
-        Console.WriteLine($"Installation: {payload.Installation.Id}");
-        Console.WriteLine($"Action: {payload.Action}");
-
-        if (payload.Action != "opened")
-        {
-            Console.WriteLine($"Pull request action '{payload.Action}' not 'opened', skipping review");
-            return Results.Ok($"PR action '{payload.Action}' not 'opened', skipping review");
-        }
-
-        try
-        {
-            var token = await installationService.GetInstallationTokenAsync(payload.Installation.Id);
-            var files = await prService.GetPRFilesAsync(
-                payload.PullRequest.Number,
-                token,
-                payload.Repository.FullName
-            );
-
-            Console.WriteLine($"Files in PR #{payload.PullRequest.Number}");
-
-            foreach (var file in files)
-            {
-                Console.WriteLine($"- {file.Filename} ({file.Status})");
-            }
-
-            var prompt = promptBuilder.BuildPrPrompt(
-                payload.Repository.FullName,
-                payload.PullRequest.Number,
-                files
-            );
-
-            var aiFeedback = await openAiReviewService.ReviewPRAsync(prompt);
-            var formattedComment = aiCommentFormatter.FormatComment(aiFeedback);
-
-            Console.WriteLine("🧠 AI Review:");
-            Console.WriteLine(formattedComment);
-
-            await commentService.PostCommentAsync(
-                payload.Repository.FullName,
-                payload.PullRequest.Number,
-                formattedComment,
-                token
-            );
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.WriteLine($"Error accessing GitHub API: {ex.Message}");
-            return Results.Problem(
-                detail: $"Error accessing GitHub API: {ex.Message}",
-                statusCode: 502,
-                title: "GitHub API Error"
-            );
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Unexpected error during PR review: {ex.Message}");
-            return Results.Problem(
-                detail: $"Unexpected error: {ex.Message}",
-                statusCode: 500,
-                title: "Internal Server Error"
-            );
-        }
-    }
-
-    return Results.Ok();
-}).WithName("GitHubWebhook");
+    return await handler.HandleAsync(request);
+})
+.WithName("GitHubWebhook");
 
 app.Run();
