@@ -8,12 +8,7 @@ public class CommentService(IHttpClientFactory httpClientFactory)
 {
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
-    public async Task PostCommentAsync(
-        string repoFullName,
-        int prNumber,
-        string comment,
-        string installationToken
-    )
+    public async Task PostCommentAsync(string repoFullName, int prNumber, string comment, string installationToken)
     {
         var client = _httpClientFactory.CreateClient("github");
 
