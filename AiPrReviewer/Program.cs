@@ -53,7 +53,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<JwtService>();
-builder.Services.AddSingleton<InstallationService>();
+builder.Services.AddScoped<IInstallationService, InstallationService>();
 builder.Services.AddSingleton<PrService>();
 builder.Services.AddSingleton<AiPromptBuilder>();
 builder.Services.AddScoped<IAiReviewer, OpenAiReviewService>();
@@ -89,7 +89,7 @@ app.MapGet("/debug/installation-token/{id:long}",
 {
     try
     {
-        var token = await service.GetInstallationToken(id);
+        var token = await service.GetInstallationTokenAsync(id);
         return Results.Ok(new { token });
     }
     catch (HttpRequestException ex)
@@ -180,7 +180,7 @@ app.MapPost("/webhooks/github", async (
 
         try
         {
-            var token = await installationService.GetInstallationToken(payload.Installation.Id);
+            var token = await installationService.GetInstallationTokenAsync(payload.Installation.Id);
             var files = await prService.GetPRFilesAsync(
                 payload.PullRequest.Number,
                 token,
