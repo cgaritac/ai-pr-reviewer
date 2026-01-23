@@ -52,7 +52,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<JwtService>();
+builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IInstallationService, InstallationService>();
 builder.Services.AddSingleton<PrService>();
 builder.Services.AddSingleton<AiPromptBuilder>();

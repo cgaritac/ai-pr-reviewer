@@ -4,9 +4,9 @@ using AiPrReviewer.Core.Interfaces;
 
 namespace AiPrReviewer.Infrastructure.Github;
 
-public class InstallationService(JwtService jwtService, IHttpClientFactory httpClientFactory) : IInstallationService
+public class InstallationService(IJwtService jwtService, IHttpClientFactory httpClientFactory) : IInstallationService
 {
-    private readonly JwtService _jwtService = jwtService;
+    private readonly IJwtService _jwtService = jwtService;
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
     public async Task<string> GetInstallationTokenAsync(long installationId)

@@ -2,10 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
+using AiPrReviewer.Core.Interfaces;
 
 namespace AiPrReviewer.Infrastructure.Github;
 
-public class JwtService : IDisposable
+public class JwtService : IJwtService, IDisposable
 {
     private readonly string _appId;
     private readonly RSA _rsa;
@@ -13,19 +14,17 @@ public class JwtService : IDisposable
 
     public JwtService()
     {
-        _appId = Environment.GetEnvironmentVariable("APP_ID") 
+        _appId = Environment.GetEnvironmentVariable("APP_ID")
             ?? throw new Exception("APP_ID is not set. Configure it in the .env file or as an environment variable.");
-        
-        var privateKeyRaw = Environment.GetEnvironmentVariable("PRIVATE_KEY") 
+
+        var privateKeyRaw = Environment.GetEnvironmentVariable("PRIVATE_KEY")
             ?? throw new Exception("PRIVATE_KEY is not set. Configure it in the .env file or as an environment variable.");
-        
+
         var privateKey = privateKeyRaw.Replace("\\n", "\n");
-        
+
         if (!privateKey.Contains("BEGIN"))
-        {
             privateKey = $"-----BEGIN RSA PRIVATE KEY-----\n{privateKey}\n-----END RSA PRIVATE KEY-----";
-        }
-        
+
         try
         {
             _rsa = RSA.Create();
@@ -36,11 +35,6 @@ public class JwtService : IDisposable
         {
             throw new Exception($"Error processing private key. Verify that PRIVATE_KEY is in PEM format. Error: {ex.Message}", ex);
         }
-    }
-    
-    public void Dispose()
-    {
-        _rsa?.Dispose();
     }
 
     public string GenerateJwtToken()
@@ -53,11 +47,13 @@ public class JwtService : IDisposable
             );
 
             var now = DateTime.UtcNow;
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Iss, _appId),
-                new Claim(JwtRegisteredClaimNames.Iat, 
-                    new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), 
+                new Claim(
+                    JwtRegisteredClaimNames.Iat,
+                    new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
                     ClaimValueTypes.Integer64)
             };
 
@@ -68,13 +64,19 @@ public class JwtService : IDisposable
                 signingCredentials: credentials
             );
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            return tokenHandler.WriteToken(token);
+            var tokenHandler = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return tokenHandler;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Console.WriteLine($"Error generating JWT token: {ex.Message}");
             throw new Exception("Error generating JWT token", ex);
         }
+    }
+    
+    public void Dispose()
+    {
+        _rsa?.Dispose();
     }
 }
