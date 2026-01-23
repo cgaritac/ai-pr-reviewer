@@ -1,70 +1,18 @@
 using AiPrReviewer.Core.Interfaces;
-using AiPrReviewer.Application.AI;
-using AiPrReviewer.Infrastructure.OpeAI;
-using AiPrReviewer.Infrastructure.Github;
-using AiPrReviewer.Application.Review;
+using AiPrReviewer.Api.Extensions;
+using AiPrReviewer.Infrastructure.Configuration;
 using AiPrReviewer.Api.Webhooks;
-using DotNetEnv;
 using Microsoft.AspNetCore.Mvc;
 
-// .env file loading and validation
-var projectDir = Directory.GetCurrentDirectory();
-var envPath = Path.Combine(projectDir, ".env");
-
-if (!File.Exists(envPath))
-{
-    var parentDir = Directory.GetParent(projectDir)?.FullName;
-    if (parentDir != null)
-    {
-        envPath = Path.Combine(parentDir, ".env");
-    }
-}
-
-if (File.Exists(envPath))
-{
-    try
-    {
-        Env.Load(envPath);
-    }
-    catch
-    {
-        var lines = File.ReadAllLines(envPath);
-        foreach (var line in lines)
-        {
-            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#"))
-                continue;
-            
-            var equalIndex = line.IndexOf('=');
-            if (equalIndex <= 0) continue;
-            
-            var key = line.Substring(0, equalIndex).Trim();
-            var value = line.Substring(equalIndex + 1).Trim();
-            
-            Environment.SetEnvironmentVariable(key, value);
-        }
-    }
-}
-else
-{
-    Env.Load();
-}
+EnvLoader.LoadEnv();
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddApplicationServices().AddInfrastructureServices();
 
 builder.Services.AddScoped<WebhookHandler>();
-builder.Services.AddSingleton<IJwtService, JwtService>();
-builder.Services.AddScoped<IInstallationService, InstallationService>();
-builder.Services.AddScoped<IPrService, PrService>();
-builder.Services.AddScoped<ICommentService, CommentService>();
-
-builder.Services.AddScoped<AiPromptBuilder>();
-builder.Services.AddScoped<IAiReviewer, OpenAiReviewService>();
-builder.Services.AddScoped<AiCommentFormatter>();
-
-builder.Services.AddScoped<IReviewPipeline, ReviewPipeline>();
 
 builder.Services.AddHttpClient("github", client =>
 {
@@ -81,8 +29,11 @@ builder.Services.AddHttpClient("github", client =>
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.MapGet("/debug/jwt", ([FromServices] IJwtService jwtService) =>
 {
