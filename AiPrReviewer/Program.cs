@@ -10,22 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddApplicationServices().AddInfrastructureServices();
+builder.Services.AddApplicationServices().AddInfrastructureServices().AddGithubHttpClient();
 
 builder.Services.AddScoped<WebhookHandler>();
-
-builder.Services.AddHttpClient("github", client =>
-{
-    client.BaseAddress = new Uri("https://api.github.com/");
-}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-    {
-        MaxConnectionsPerServer = 10
-    })
-    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .ConfigureHttpClient(client =>
-    {
-        client.Timeout = TimeSpan.FromSeconds(60);
-    });
 
 var app = builder.Build();
 
@@ -35,13 +22,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/debug/jwt", ([FromServices] IJwtService jwtService) =>
+var debug = app.MapGroup("/debug");
+
+debug.MapGet("/jwt", ([FromServices] IJwtService jwtService) =>
 {
     var jwt = jwtService.GenerateJwtToken();
     return Results.Ok(jwt);
 }).WithName("DebugJwt");
 
-app.MapGet("/debug/installation-token/{id:long}",
+debug.MapGet("/installation-token/{id:long}",
     async (long id, [FromServices] IInstallationService service) =>
 {
     try
