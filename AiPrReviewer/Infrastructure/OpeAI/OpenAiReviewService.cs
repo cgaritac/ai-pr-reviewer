@@ -1,8 +1,9 @@
 using OpenAI.Chat;
+using AiPrReviewer.Core.Interfaces;
 
-namespace AiPrReviewer.Services.AI;
+namespace AiPrReviewer.Infrastructure.OpeAI;
 
-public class OpenAiReviewService
+public class OpenAiReviewService : IAiReviewer
 {
     private readonly string _apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
         ?? throw new Exception("OPENAI_API_KEY is not set. Configure it in the .env file or as an environment variable.");

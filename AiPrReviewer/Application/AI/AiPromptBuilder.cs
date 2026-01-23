@@ -1,17 +1,13 @@
 using System.Text;
 using AiPrReviewer.Core.Models;
 
-namespace AiPrReviewer.Services.AI;
+namespace AiPrReviewer.Application.AI;
 
 public class AiPromptBuilder
 {
-    public string BuildPrPrompt(
-        string repoName,
-        int prNumber,
-        IEnumerable<PRFile> files
-    )
+    public string BuildPrPrompt(string repoName, int prNumber, IEnumerable<PRFile> files)
     {
-        var sb = new StringBuilder();
+        StringBuilder sb = new();
 
         sb.AppendLine($"Repository: {repoName}");
         sb.AppendLine($"Pull Request: #{prNumber}");
@@ -31,6 +27,8 @@ public class AiPromptBuilder
         sb.AppendLine();
         sb.AppendLine("Please review the changes above.");
 
-        return sb.ToString();
+        string prompt = sb.ToString();
+
+        return prompt;
     }
 }

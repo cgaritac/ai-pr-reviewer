@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace AiPrReviewer.Services.Github;
+namespace AiPrReviewer.Infrastructure.Github;
 
 public class InstallationService(JwtService jwtService, IHttpClientFactory httpClientFactory)
 {
@@ -11,7 +11,6 @@ public class InstallationService(JwtService jwtService, IHttpClientFactory httpC
     public async Task<string> GetInstallationToken(long installationId)
     {
         var token = _jwtService.GenerateJwtToken();
-
         var client = _httpClientFactory.CreateClient("github");
         
         client.DefaultRequestHeaders.Clear();
