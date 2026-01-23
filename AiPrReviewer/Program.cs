@@ -4,6 +4,7 @@ using AiPrReviewer.Core.Interfaces;
 using AiPrReviewer.Application.AI;
 using AiPrReviewer.Infrastructure.OpeAI;
 using AiPrReviewer.Infrastructure.Github;
+using AiPrReviewer.Application.Review;
 using DotNetEnv;
 
 // .env file loading and validation
@@ -54,11 +55,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IInstallationService, InstallationService>();
-builder.Services.AddSingleton<PrService>();
-builder.Services.AddSingleton<AiPromptBuilder>();
+builder.Services.AddScoped<IPrService, PrService>();
+builder.Services.AddScoped<AiPromptBuilder>();
 builder.Services.AddScoped<IAiReviewer, OpenAiReviewService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddSingleton<AiCommentFormatter>();
+builder.Services.AddScoped<AiCommentFormatter>();
+builder.Services.AddScoped<IReviewPipeline, ReviewPipeline>();
 builder.Services.AddHttpClient("github", client =>
 {
     client.BaseAddress = new Uri("https://api.github.com/");

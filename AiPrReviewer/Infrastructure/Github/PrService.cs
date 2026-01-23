@@ -1,14 +1,16 @@
 using AiPrReviewer.Core.Models;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using AiPrReviewer.Core.Interfaces;
 
 namespace AiPrReviewer.Infrastructure.Github;
 
-public class PrService(IHttpClientFactory httpClientFactory)
+public class PrService(IHttpClientFactory httpClientFactory, ILogger<PrService> logger) : IPrService
 {
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private readonly ILogger<PrService> _logger = logger;
 
-    public async Task<List<PRFile>> GetPRFilesAsync(int prNumber, string installationToken, string repositoryName)
+    public async Task<IReadOnlyList<PRFile>> GetPRFilesAsync(int prNumber, string repositoryFullName, string installationToken)
     {
         var client = _httpClientFactory.CreateClient("github");
 
@@ -17,21 +19,21 @@ public class PrService(IHttpClientFactory httpClientFactory)
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.UserAgent.ParseAdd("AiPrReviewer/1.0");
 
-        var response = await client.GetAsync($"repos/{repositoryName}/pulls/{prNumber}/files");
+        var response = await client.GetAsync($"repos/{repositoryFullName}/pulls/{prNumber}/files");
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            var statusCode = response.StatusCode;
-            var errorMessage = $"GitHub API error ({statusCode}): {errorContent}";
-            
-            Console.WriteLine($"Error getting PR files:");
-            Console.WriteLine($"Status Code: {statusCode}");
-            Console.WriteLine($"Response: {errorContent}");
-            Console.WriteLine($"Repository: {repositoryName}");
-            Console.WriteLine($"PR Number: {prNumber}");
-            
-            throw new HttpRequestException(errorMessage);
+            var error = await response.Content.ReadAsStringAsync();
+
+            _logger.LogError(
+                "Error fetching PR files. Repo={Repo}, PR={Pr}, Status={Status}, Body={Body}",
+                repositoryFullName,
+                prNumber,
+                response.StatusCode,
+                error);
+
+            throw new HttpRequestException(
+                $"GitHub API error {response.StatusCode}: {error}");
         }
 
         var jsonContent = await response.Content.ReadAsByteArrayAsync();
