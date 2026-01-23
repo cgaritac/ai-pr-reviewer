@@ -17,7 +17,7 @@ public class PrService(IHttpClientFactory httpClientFactory)
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.UserAgent.ParseAdd("AiPrReviewer/1.0");
 
-        var response = await client.GetAsync($"https://api.github.com/repos/{repositoryName}/pulls/{prNumber}/files");
+        var response = await client.GetAsync($"repos/{repositoryName}/pulls/{prNumber}/files");
 
         if (!response.IsSuccessStatusCode)
         {

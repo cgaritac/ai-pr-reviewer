@@ -1,6 +1,8 @@
 using System.Text.Json;
 using AiPrReviewer.Core.Models;
+using AiPrReviewer.Core.Interfaces;
 using AiPrReviewer.Application.AI;
+using AiPrReviewer.Infrastructure.OpeAI;
 using AiPrReviewer.Infrastructure.Github;
 using DotNetEnv;
 
@@ -50,14 +52,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<JwtService>();
-builder.Services.AddSingleton<InstallationService>();
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddScoped<IInstallationService, InstallationService>();
 builder.Services.AddSingleton<PrService>();
 builder.Services.AddSingleton<AiPromptBuilder>();
-builder.Services.AddSingleton<OpenAiReviewService>();
-builder.Services.AddSingleton<CommentService>();
+builder.Services.AddScoped<IAiReviewer, OpenAiReviewService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddSingleton<AiCommentFormatter>();
-builder.Services.AddHttpClient("github")
+builder.Services.AddHttpClient("github", client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+})
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
         MaxConnectionsPerServer = 10
@@ -84,7 +89,7 @@ app.MapGet("/debug/installation-token/{id:long}",
 {
     try
     {
-        var token = await service.GetInstallationToken(id);
+        var token = await service.GetInstallationTokenAsync(id);
         return Results.Ok(new { token });
     }
     catch (HttpRequestException ex)
@@ -175,7 +180,7 @@ app.MapPost("/webhooks/github", async (
 
         try
         {
-            var token = await installationService.GetInstallationToken(payload.Installation.Id);
+            var token = await installationService.GetInstallationTokenAsync(payload.Installation.Id);
             var files = await prService.GetPRFilesAsync(
                 payload.PullRequest.Number,
                 token,
