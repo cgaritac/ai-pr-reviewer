@@ -54,7 +54,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IInstallationService, InstallationService>();
-builder.Services.AddSingleton<PrService>();
+builder.Services.AddScoped<IPrService, PrService>();
 builder.Services.AddSingleton<AiPromptBuilder>();
 builder.Services.AddScoped<IAiReviewer, OpenAiReviewService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
