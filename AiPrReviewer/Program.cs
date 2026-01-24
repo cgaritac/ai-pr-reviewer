@@ -1,7 +1,7 @@
-using AiPrReviewer.Core.Interfaces;
 using AiPrReviewer.Api.Extensions;
-using AiPrReviewer.Infrastructure.Configuration;
+using AiPrReviewer.Api.Debugs;
 using AiPrReviewer.Api.Webhooks;
+using AiPrReviewer.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Mvc;
 
 EnvLoader.LoadEnv();
@@ -13,6 +13,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApplicationServices().AddInfrastructureServices().AddGithubHttpClient();
 
 builder.Services.AddScoped<WebhookHandler>();
+builder.Services.AddScoped<DebugJwtHandler>();
+builder.Services.AddScoped<DebugInstallationHandler>();
+builder.Services.AddScoped<DebugInstallationsListHandler>();
 
 var app = builder.Build();
 
@@ -24,41 +27,26 @@ if (app.Environment.IsDevelopment())
 
 var debug = app.MapGroup("/debug");
 
-debug.MapGet("/jwt", ([FromServices] IJwtService jwtService) =>
+debug.MapGet("/jwt", async ([FromServices] DebugJwtHandler handler) =>
 {
-    var jwt = jwtService.GenerateJwtToken();
-    return Results.Ok(jwt);
+    return await handler.HandleAsync();
 }).WithName("DebugJwt");
 
-debug.MapGet("/installation-token/{id:long}",
-    async (long id, [FromServices] IInstallationService service) =>
+debug.MapGet("/installations", async ([FromServices] DebugInstallationsListHandler handler) =>
 {
-    try
-    {
-        var token = await service.GetInstallationTokenAsync(id);
-        return Results.Ok(new { token });
-    }
-    catch (HttpRequestException ex)
-    {
-        return Results.Problem(
-            detail: ex.Message,
-            statusCode: 500,
-            title: "Error getting installation token"
-        );
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem(
-            detail: $"Unexpected error: {ex.Message}\nStack trace: {ex.StackTrace}",
-            statusCode: 500,
-            title: "Unexpected error"
-        );
-    }
+    return await handler.HandleAsync();
+}).WithName("DebugInstallations");
+
+debug.MapGet("/installation-token/{id:long}", async (
+    long id,
+    [FromServices] DebugInstallationHandler handler) =>
+{
+    return await handler.HandleAsync(id);
 }).WithName("DebugInstallationToken");
 
 app.MapPost("/webhooks/github", async (
     HttpRequest request,
-    WebhookHandler handler) =>
+    [FromServices] WebhookHandler handler) =>
 {
     return await handler.HandleAsync(request);
 })

@@ -13,7 +13,6 @@ public class WebhookHandler(IReviewPipeline reviewPipeline, ILogger<WebhookHandl
     {
         var githubEvent = request.Headers["X-GitHub-Event"].ToString();
         
-        // Only process pull_request events
         if (githubEvent != "pull_request")
         {
             _logger.LogInformation("Ignoring event type: {EventType}", githubEvent);
