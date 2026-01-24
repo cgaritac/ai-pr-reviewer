@@ -1,5 +1,7 @@
 using AiPrReviewer.Core.Interfaces;
 using AiPrReviewer.Application.AI;
+using AiPrReviewer.Application.Diff;
+using AiPrReviewer.Application.Rules;
 
 namespace AiPrReviewer.Application.Review;
 
@@ -11,6 +13,8 @@ public class ReviewPipeline(
     ICommentService commentService,
     AiPromptBuilder promptBuilder,
     AiCommentFormatter aiCommentFormatter,
+    GithubDiffParser diffParser,
+    BasicPrRules basicPrRules,
     ILogger<ReviewPipeline> logger) : IReviewPipeline
 {
     private readonly IJwtService _jwtService = jwtService;
@@ -20,6 +24,8 @@ public class ReviewPipeline(
     private readonly ICommentService _commentService = commentService;
     private readonly AiPromptBuilder _promptBuilder = promptBuilder;
     private readonly AiCommentFormatter _aiCommentFormatter = aiCommentFormatter;
+    private readonly GithubDiffParser _diffParser = diffParser;
+    private readonly BasicPrRules _basicPrRules = basicPrRules;
     private readonly ILogger<ReviewPipeline> _logger = logger;
 
     public async Task RunAsync(long installationId, int prNumber, string repositoryFullName)
@@ -45,10 +51,25 @@ public class ReviewPipeline(
             return;
         }
 
-        // 3. Build AI prompt
-        var prompt = _promptBuilder.BuildPrPrompt(repositoryFullName, prNumber, prFiles);
+        // 3. Normalize files using diff parser (filter and limit size)
+        var normalizedFiles = _diffParser.Normalize(prFiles).ToList();
 
-        // 4. Call OpenAI to get review
+        if (!normalizedFiles.Any())
+        {
+            _logger.LogInformation(
+                "No valid files after normalization in PR {PrNumber} in repository {RepositoryFullName}. Skipping review.",
+                prNumber,
+                repositoryFullName);
+            return;
+        }
+
+        // 4. Evaluate basic PR rules
+        var ruleWarnings = _basicPrRules.Evaluate(normalizedFiles).ToList();
+
+        // 5. Build AI prompt with normalized files
+        var prompt = _promptBuilder.BuildPrPrompt(repositoryFullName, prNumber, normalizedFiles);
+
+        // 6. Call OpenAI to get review
         var aiFeedback = await _aiReviewer.ReviewPRAsync(prompt);
 
         if (string.IsNullOrWhiteSpace(aiFeedback))
@@ -60,10 +81,10 @@ public class ReviewPipeline(
             return;
         }
 
-        // 5. Format comment
-        var formattedComment = _aiCommentFormatter.FormatComment(aiFeedback);
+        // 7. Format comment (include rule warnings if any)
+        var formattedComment = _aiCommentFormatter.FormatComment(aiFeedback, ruleWarnings);
 
-        // 6. Post comment to GitHub
+        // 8. Post comment to GitHub
         await _commentService.PostCommentAsync(repositoryFullName, prNumber, formattedComment, installationToken);
 
         _logger.LogInformation(
