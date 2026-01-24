@@ -6,7 +6,6 @@ using AiPrReviewer.Application.Rules;
 namespace AiPrReviewer.Application.Review;
 
 public class ReviewPipeline(
-    IJwtService jwtService,
     IInstallationService installationService,
     IPrService prService,
     IAiReviewer aiReviewer,
@@ -17,7 +16,6 @@ public class ReviewPipeline(
     BasicPrRules basicPrRules,
     ILogger<ReviewPipeline> logger) : IReviewPipeline
 {
-    private readonly IJwtService _jwtService = jwtService;
     private readonly IInstallationService _installationService = installationService;
     private readonly IPrService _prService = prService;
     private readonly IAiReviewer _aiReviewer = aiReviewer;
