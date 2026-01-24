@@ -9,6 +9,7 @@ EnvLoader.LoadEnv();
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApplicationServices().AddInfrastructureServices().AddGithubHttpClient();
 
@@ -24,6 +25,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseRouting();
+app.MapControllers();
 
 var debug = app.MapGroup("/debug");
 
