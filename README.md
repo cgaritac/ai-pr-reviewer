@@ -304,6 +304,8 @@ This project was built to demonstrate:
 Full Stack Developer  
 Passionate about scalable systems, cloud architectures, and AI-assisted development.
 
----
+## 📄 License
 
-> ⚠️ **Note**: This project is under active development. The architecture has been refactored to follow clean architecture principles with proper separation of concerns.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
